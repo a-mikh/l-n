@@ -1,40 +1,43 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Note } from './types/note.type';
+import { CreateNoteDto } from './dto/create-note.dto';
+import { UpdateNoteDto } from './dto/update-note.dto';
+import { SearchNotesDto } from './dto/search-notes.dto';
+import type { NotesRepository } from './notes.repository';
+import { NOTES_REPOSITORY } from './tokens';
 
 @Injectable()
 export class NotesService {
-  private notes: Note[] = [];
-  private nextId: number = 1;
+  constructor(
+    @Inject(NOTES_REPOSITORY) private readonly notesRepository: NotesRepository,
+  ) {}
 
-  create(note: Note): Note {
-    note.id = this.nextId++;
-    this.notes.push(note);
+  async create(dto: CreateNoteDto): Promise<Note> {
+    return this.notesRepository.create(dto);
+  }
+
+  async findAll(): Promise<Note[]> {
+    return this.notesRepository.findAll();
+  }
+
+  async findById(id: number): Promise<Note> {
+    const note = await this.notesRepository.findById(id);
+    if (!note) {
+      throw new NotFoundException(`Note with id ${id} not found`);
+    }
     return note;
   }
 
-  findAll(): Note[] {
-    return this.notes;
+  async update(id: number, dto: UpdateNoteDto): Promise<Note> {
+    return await this.notesRepository.update(id, dto);
   }
 
-  findById(id: number): Note | undefined {
-    return this.notes.find((note) => note.id === id);
+  async delete(id: number): Promise<Note> {
+    const note = await this.notesRepository.delete(id);
+    return note;
   }
 
-  update(id: number, updatedNote: Partial<Note>): Note | null {
-    const index = this.notes.findIndex((note) => note.id === id);
-    if (index !== -1) {
-      this.notes[index] = { ...this.notes[index], ...updatedNote };
-      return this.notes[index];
-    }
-    return null;
-  }
-
-  delete(id: number): Note | null {
-    const index = this.notes.findIndex((note) => note.id === id);
-    if (index !== -1) {
-      const deletedNote = this.notes.splice(index, 1);
-      return deletedNote[0];
-    }
-    return null;
+  async searchByTag(dto: SearchNotesDto): Promise<Note[]> {
+    return this.notesRepository.searchByTag(dto.tag);
   }
 }

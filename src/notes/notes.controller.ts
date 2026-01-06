@@ -3,31 +3,24 @@ import {
   Controller,
   Delete,
   Get,
-  HttpCode,
   Param,
   ParseIntPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { NotesService } from './notes.service';
-import { type NoteDto } from './dto/note.dto';
-import { Note } from './types/note.type';
+import { CreateNoteDto } from './dto/create-note.dto';
+import { UpdateNoteDto } from './dto/update-note.dto';
+import { SearchNotesDto } from './dto/search-notes.dto';
 
 @Controller('notes')
 export class NotesController {
   constructor(private readonly notesService: NotesService) {}
 
   @Post()
-  @HttpCode(201)
-  createNote(@Body() noteData: NoteDto) {
-    const note: Note = {
-      id: 0, // Temporary, will be set in service
-      title: noteData.title,
-      content: noteData.content,
-      tags: noteData.tags,
-      createdAt: new Date().toISOString(),
-    };
-    return this.notesService.create(note);
+  createNote(@Body() dto: CreateNoteDto) {
+    return this.notesService.create(dto);
   }
 
   @Get()
@@ -43,9 +36,14 @@ export class NotesController {
   @Patch(':id')
   updateNote(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updatedNote: Partial<Note>,
+    @Body() dto: UpdateNoteDto,
   ) {
-    return this.notesService.update(id, updatedNote);
+    return this.notesService.update(id, dto);
+  }
+
+  @Get('search')
+  searchNotes(@Query('tag') dto: SearchNotesDto) {
+    return this.notesService.searchByTag(dto);
   }
 
   @Delete(':id')
