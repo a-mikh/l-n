@@ -8,8 +8,19 @@ export function requestIdMiddleware(
   res: Response,
   next: NextFunction,
 ) {
-  const requestId = req.id || req.header(REQUEST_ID_HEADER) || randomUUID();
+  let requestId = req.id;
+
+  if (!requestId) {
+    if (process.env.NODE_ENV !== 'production') {
+      throw new Error(
+        'req.id is missing. Check nestjs-pino pinoHttp.genReqId and middleware order.',
+      );
+    }
+    requestId = randomUUID();
+  }
+
   req.requestId = requestId;
   res.setHeader(REQUEST_ID_HEADER, requestId);
+
   next();
 }
